@@ -1,8 +1,46 @@
 from pathlib import Path
+import ast
+
+
+def parse_python_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        code = file.read()
+
+    return ast.parse(code)
+
+
+def analyze_python_file(file_path):
+    tree = parse_python_file(file_path)
+
+    functions = []
+    classes = []
+    imports = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            functions.append(node.name)
+
+        elif isinstance(node, ast.ClassDef):
+            classes.append(node.name)
+
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append(alias.name)
+
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                imports.append(node.module)
+
+    return {
+        "file": str(file_path),
+        "functions": functions,
+        "classes": classes,
+        "imports": imports,
+    }
 
 
 def get_project_name(root):
-    return root.name
+    return root.resolve().name
 
 
 def count_folders(root, ignore):
@@ -34,7 +72,6 @@ def calculate_size(root, ignore):
 
 
 def scan_repository(path: str):
-
     root = Path(path)
 
     ignore = {
@@ -48,6 +85,8 @@ def scan_repository(path: str):
     text_files = 0
     other_files = 0
 
+    python_analysis = []
+
     for item in root.rglob("*"):
 
         if any(part in ignore for part in item.parts):
@@ -57,6 +96,7 @@ def scan_repository(path: str):
 
             if item.suffix == ".py":
                 python_files += 1
+                python_analysis.append(analyze_python_file(item))
 
             elif item.suffix == ".md":
                 markdown_files += 1
@@ -75,4 +115,10 @@ def scan_repository(path: str):
         "markdown": markdown_files,
         "text": text_files,
         "other": other_files,
+        "python_analysis": python_analysis,
     }
+
+
+if __name__ == "__main__":
+    result = analyze_python_file("app/main.py")
+    print(result)
