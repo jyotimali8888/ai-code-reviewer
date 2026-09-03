@@ -165,17 +165,21 @@ def scan_repository(path: str):
                     analysis = analyze_python_file(item)
                     python_analysis.append(analysis)
 
-                except SyntaxError:
+                except SyntaxError as error:
                     python_analysis.append({
-                        "file": str(item),
-                        "functions": [],
-                        "classes": [],
-                        "imports": [],
-                        "long_functions": [],
-                        "missing_docstrings": [],
-                        "error": "Syntax error"
-                    })
-
+                         "file": str(item),
+                         "functions": [],
+                         "classes": [],
+                         "imports": [],
+                         "long_functions": [],
+                         "missing_docstrings": [],
+                         "unused_imports": [],
+                         "error": {
+                           "message": error.msg,
+                           "line": error.lineno,
+                           "column": error.offset
+        }
+    })
             elif item.suffix == ".md":
                 markdown_files += 1
 
