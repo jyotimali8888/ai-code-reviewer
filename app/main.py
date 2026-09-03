@@ -70,6 +70,11 @@ def review(path: str):
             console.print(
                 f"  [red]⚠ Unused import: {name}[/red]"
             )
+        for issue in analysis["security_issues"]:
+            console.print(
+                f"  [red]🔴 Security issue: {issue['name']}() "
+                f"at line {issue['line']}[/red]"
+            )
 
         if "error" in analysis:
             error = analysis["error"]

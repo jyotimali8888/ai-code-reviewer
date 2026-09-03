@@ -26,9 +26,10 @@ def analyze_python_file(file_path):
     long_functions = []
     missing_docstrings = []
     unused_imports = []
+    security_issues = []
     used_names = set()
 
-    # Find functions, classes, and imports
+    # Find functions, classes, imports, and security issues
     for node in ast.walk(tree):
 
         # Find functions
@@ -45,7 +46,7 @@ def analyze_python_file(file_path):
                         "lines": lines
                     })
 
-            # Check for missing docstring
+            # Check missing docstring
             if ast.get_docstring(node) is None:
                 missing_docstrings.append(node.name)
 
@@ -63,7 +64,16 @@ def analyze_python_file(file_path):
             if node.module:
                 imports.append(node.module)
 
-    # Find names actually used in the code
+        # Detect potentially dangerous functions
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                if node.func.id in {"eval", "exec"}:
+                    security_issues.append({
+                        "name": node.func.id,
+                        "line": node.lineno
+                    })
+
+    # Find names actually used in code
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
             used_names.add(node.id)
@@ -72,7 +82,11 @@ def analyze_python_file(file_path):
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                name = alias.asname if alias.asname else alias.name.split(".")[0]
+                name = (
+                    alias.asname
+                    if alias.asname
+                    else alias.name.split(".")[0]
+                )
 
                 if name not in used_names:
                     unused_imports.append(name)
@@ -85,7 +99,10 @@ def analyze_python_file(file_path):
         "long_functions": long_functions,
         "missing_docstrings": missing_docstrings,
         "unused_imports": unused_imports,
+        "security_issues": security_issues,
     }
+
+
 # --------------------------------
 # Get project name
 # --------------------------------
@@ -102,9 +119,7 @@ def count_folders(root, ignore):
     count = 0
 
     for item in root.rglob("*"):
-
         if item.is_dir():
-
             if any(part in ignore for part in item.parts):
                 continue
 
@@ -121,7 +136,6 @@ def calculate_size(root, ignore):
     total_size = 0
 
     for item in root.rglob("*"):
-
         if any(part in ignore for part in item.parts):
             continue
 
@@ -152,7 +166,6 @@ def scan_repository(path: str):
     python_analysis = []
 
     for item in root.rglob("*"):
-
         if any(part in ignore for part in item.parts):
             continue
 
@@ -167,19 +180,21 @@ def scan_repository(path: str):
 
                 except SyntaxError as error:
                     python_analysis.append({
-                         "file": str(item),
-                         "functions": [],
-                         "classes": [],
-                         "imports": [],
-                         "long_functions": [],
-                         "missing_docstrings": [],
-                         "unused_imports": [],
-                         "error": {
-                           "message": error.msg,
-                           "line": error.lineno,
-                           "column": error.offset
-        }
-    })
+                        "file": str(item),
+                        "functions": [],
+                        "classes": [],
+                        "imports": [],
+                        "long_functions": [],
+                        "missing_docstrings": [],
+                        "unused_imports": [],
+                        "security_issues": [],
+                        "error": {
+                            "message": error.msg,
+                            "line": error.lineno,
+                            "column": error.offset
+                        }
+                    })
+
             elif item.suffix == ".md":
                 markdown_files += 1
 
