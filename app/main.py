@@ -103,8 +103,10 @@ def review(path: str):
                 f"{function_name}"
             )
 
-        console.print()
-
+        for name in analysis["unused_imports"]:
+            console.print(
+                f"  [red]⚠ Unused import: {name}[/red]"
+            )
 
 if __name__ == "__main__":
-    app()
+       app()

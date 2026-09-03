@@ -25,7 +25,10 @@ def analyze_python_file(file_path):
     imports = []
     long_functions = []
     missing_docstrings = []
+    unused_imports = []
+    used_names = set()
 
+    # Find functions, classes, and imports
     for node in ast.walk(tree):
 
         # Find functions
@@ -60,6 +63,20 @@ def analyze_python_file(file_path):
             if node.module:
                 imports.append(node.module)
 
+    # Find names actually used in the code
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            used_names.add(node.id)
+
+    # Find unused imports
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                name = alias.asname if alias.asname else alias.name.split(".")[0]
+
+                if name not in used_names:
+                    unused_imports.append(name)
+
     return {
         "file": str(file_path),
         "functions": functions,
@@ -67,9 +84,8 @@ def analyze_python_file(file_path):
         "imports": imports,
         "long_functions": long_functions,
         "missing_docstrings": missing_docstrings,
+        "unused_imports": unused_imports,
     }
-
-
 # --------------------------------
 # Get project name
 # --------------------------------
