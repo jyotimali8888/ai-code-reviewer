@@ -16,7 +16,29 @@ def parse_python_file(file_path):
 # --------------------------------
 # Analyze Python file
 # --------------------------------
+def calculate_complexity(function_node):
+    complexity = 1
 
+    for node in ast.walk(function_node):
+
+        if isinstance(
+            node,
+            (
+                ast.If,
+                ast.For,
+                ast.While,
+                ast.Try,
+                ast.ExceptHandler,
+                ast.With,
+                ast.IfExp,
+            ),
+        ):
+            complexity += 1
+
+        elif isinstance(node, ast.BoolOp):
+            complexity += len(node.values) - 1
+
+    return complexity
 def analyze_python_file(file_path):
     tree = parse_python_file(file_path)
 
@@ -24,6 +46,7 @@ def analyze_python_file(file_path):
     classes = []
     imports = []
     long_functions = []
+    complex_functions = []
     missing_docstrings = []
     unused_imports = []
     security_issues = []
@@ -35,7 +58,14 @@ def analyze_python_file(file_path):
         # Find functions
         if isinstance(node, ast.FunctionDef):
             functions.append(node.name)
+                        # Check cyclomatic complexity
+            complexity = calculate_complexity(node)
 
+            if complexity > 10:
+                complex_functions.append({
+                    "name": node.name,
+                    "complexity": complexity
+                })
             # Check function length
             if node.end_lineno is not None:
                 lines = node.end_lineno - node.lineno + 1
@@ -97,6 +127,7 @@ def analyze_python_file(file_path):
         "classes": classes,
         "imports": imports,
         "long_functions": long_functions,
+        "complex_functions": complex_functions,
         "missing_docstrings": missing_docstrings,
         "unused_imports": unused_imports,
         "security_issues": security_issues,

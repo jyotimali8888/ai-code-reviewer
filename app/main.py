@@ -60,6 +60,11 @@ def review(path: str):
                 f"  [yellow]⚠ Long function: {item['name']} "
                 f"({item['lines']} lines)[/yellow]"
             )
+        for item in analysis["complex_functions"]:
+            console.print(
+                f"  [yellow]⚠ High complexity: {item['name']} "
+                f"(complexity {item['complexity']})[/yellow]"
+            )
 
         for name in analysis["missing_docstrings"]:
             console.print(
