@@ -11,8 +11,66 @@ def parse_python_file(file_path):
         code = file.read()
 
     return ast.parse(code)
+# --------------------------------
+# Calculate code quality score
+# --------------------------------
 
+def calculate_quality_score(analysis):
+    score = 100
 
+    score -= len(analysis["long_functions"]) * 5
+    score -= len(analysis["missing_docstrings"]) * 2
+    score -= len(analysis["unused_imports"]) * 3
+    score -= len(analysis["complex_functions"]) * 5
+    score -= len(analysis["security_issues"]) * 10
+
+    return max(score, 0)
+# --------------------------------
+# Detect duplicate functions
+# --------------------------------
+
+def find_duplicate_functions(tree):
+    functions = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+
+            # Create a copy of the function
+            function_copy = ast.FunctionDef(
+                name="function",
+                args=node.args,
+                body=node.body,
+                decorator_list=[],
+                returns=node.returns,
+            )
+
+            # Convert the function structure to text
+            source = ast.dump(
+                function_copy,
+                annotate_fields=False,
+                include_attributes=False,
+            )
+
+            functions.append({
+                "name": node.name,
+                "source": source,
+                "line": node.lineno,
+            })
+
+    duplicates = []
+
+    for i in range(len(functions)):
+        for j in range(i + 1, len(functions)):
+
+            if functions[i]["source"] == functions[j]["source"]:
+                duplicates.append({
+                    "function1": functions[i]["name"],
+                    "function2": functions[j]["name"],
+                    "line1": functions[i]["line"],
+                    "line2": functions[j]["line"],
+                })
+
+    return duplicates
 # --------------------------------
 # Analyze Python file
 # --------------------------------
@@ -41,6 +99,7 @@ def calculate_complexity(function_node):
     return complexity
 def analyze_python_file(file_path):
     tree = parse_python_file(file_path)
+    duplicates = find_duplicate_functions(tree)
 
     functions = []
     classes = []
@@ -131,8 +190,15 @@ def analyze_python_file(file_path):
         "missing_docstrings": missing_docstrings,
         "unused_imports": unused_imports,
         "security_issues": security_issues,
+        "duplicates": duplicates,
+        "quality_score": calculate_quality_score({
+            "long_functions": long_functions,
+            "missing_docstrings": missing_docstrings,
+            "unused_imports": unused_imports,
+            "complex_functions": complex_functions,
+            "security_issues": security_issues,
+        }),
     }
-
 
 # --------------------------------
 # Get project name

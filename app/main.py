@@ -54,6 +54,17 @@ def review(path: str):
         console.print(f"  Functions : {functions}")
         console.print(f"  Classes   : {classes}")
         console.print(f"  Imports   : {imports}")
+        console.print(
+    f"  Quality Score : {analysis['quality_score']}/100"
+)
+        for duplicate in analysis["duplicates"]:
+            console.print(
+        f"  [yellow]⚠ Duplicate functions: "
+        f"{duplicate['function1']}() and "
+        f"{duplicate['function2']}() "
+        f"(lines {duplicate['line1']} and "
+        f"{duplicate['line2']})[/yellow]"
+    )
 
         for item in analysis["long_functions"]:
             console.print(
